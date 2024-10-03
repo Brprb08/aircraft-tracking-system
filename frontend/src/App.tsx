@@ -18,14 +18,32 @@ const App: React.FC = () => {
 
   // Initial state for the fake planes
   const [fakePlanes, setFakePlanes] = useState<Aircraft[]>([
-    { flightId: 'plane1', latitude: 44.8756, longitude: -91.4383, altitude: 10000, speed: 120 },
-    { flightId: 'plane2', latitude: 44.8766, longitude: -91.4393, altitude: 10500, speed: 150 },
-    { flightId: 'plane3', latitude: 44.8746, longitude: -91.4373, altitude: 11000, speed: 180 }
+    {
+      flightId: 'plane1',
+      latitude: 44.8756,
+      longitude: -91.4383,
+      altitude: 10000,
+      speed: 120,
+    },
+    {
+      flightId: 'plane2',
+      latitude: 44.8766,
+      longitude: -91.4393,
+      altitude: 10500,
+      speed: 150,
+    },
+    {
+      flightId: 'plane3',
+      latitude: 44.8746,
+      longitude: -91.4373,
+      altitude: 11000,
+      speed: 180,
+    },
   ]);
 
   // Function to simulate circular movement for each plane
   const movePlanesInCircles = () => {
-    setFakePlanes((prevPlanes) => 
+    setFakePlanes((prevPlanes) =>
       prevPlanes.map((plane, index) => {
         const angle = (Date.now() / 1000 + index * 2) % (2 * Math.PI); // Unique angle for each plane
         const radius = 0.01; // Radius of the circle
@@ -44,13 +62,17 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchAircraftData = () => {
       // Fetch real aircraft data
-      axios.get('http://localhost:5000/api/aircraft')
-        .then(response => {
+      axios
+        .get('http://localhost:5000/api/aircraft')
+        .then((response) => {
           if (response.data.length > 0) {
-            setAircraftData((prevAircraftData) => [...prevAircraftData, ...response.data]); // Keep adding new data
+            setAircraftData((prevAircraftData) => [
+              ...prevAircraftData,
+              ...response.data,
+            ]); // Keep adding new data
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error fetching aircraft data:', error);
         });
 
@@ -64,7 +86,7 @@ const App: React.FC = () => {
     // Periodically fetch data and move fake planes every 5 seconds
     const intervalId = setInterval(fetchAircraftData, 2000);
 
-    return () => clearInterval(intervalId);  // Cleanup interval on component unmount
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, [fakePlanes]);
 
   // Define a default center position for the map
@@ -75,32 +97,40 @@ const App: React.FC = () => {
       <h1>Aircraft Tracking System</h1>
       <MapContainer center={defaultCenter} zoom={5} style={{ height: '100vh' }}>
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        
+
         {/* Render real aircraft data */}
-        {aircraftData.map(aircraft => (
-          <Marker 
-            key={aircraft.flightId} 
-            position={[aircraft.latitude, aircraft.longitude]} 
-            icon={L.icon({ iconUrl: '/img/light-aircraft.png', iconSize: [25, 25] })}
+        {aircraftData.map((aircraft) => (
+          <Marker
+            key={aircraft.flightId}
+            position={[aircraft.latitude, aircraft.longitude]}
+            icon={L.icon({
+              iconUrl: '/img/light-aircraft.png',
+              iconSize: [25, 25],
+            })}
           >
             <Popup>
-              Flight: {aircraft.flightId} <br /> Altitude: {aircraft.altitude} ft <br /> Speed: {aircraft.speed} knots
+              Flight: {aircraft.flightId} <br /> Altitude: {aircraft.altitude}{' '}
+              ft <br /> Speed: {aircraft.speed} knots
             </Popup>
           </Marker>
         ))}
 
         {/* Render the fake planes */}
-        {fakePlanes.map(plane => (
-          <Marker 
-            key={plane.flightId} 
-            position={[plane.latitude, plane.longitude]} 
-            icon={L.icon({ iconUrl: '/img/light-aircraft.png', iconSize: [25, 25] })}
+        {fakePlanes.map((plane) => (
+          <Marker
+            key={plane.flightId}
+            position={[plane.latitude, plane.longitude]}
+            icon={L.icon({
+              iconUrl: '/img/light-aircraft.png',
+              iconSize: [25, 25],
+            })}
           >
             <Popup>
-              Flight: {plane.flightId} <br /> Altitude: {plane.altitude} ft <br /> Speed: {plane.speed} knots
+              Flight: {plane.flightId} <br /> Altitude: {plane.altitude} ft{' '}
+              <br /> Speed: {plane.speed} knots
             </Popup>
           </Marker>
         ))}

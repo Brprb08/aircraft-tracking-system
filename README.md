@@ -1,4 +1,3 @@
-
 # Aircraft Tracking System
 
 This is a web-based **Aircraft Tracking System** built with **React**, **Leaflet** for mapping, and a **Node.js/Express** backend. The application fetches real aircraft data (from a backend API) and simulates the movement of multiple planes on a map. It also includes fake planes flying in circles to demonstrate movement.
@@ -33,11 +32,13 @@ cd aircraft-tracking-system
 ### Backend Setup
 
 1. Navigate to the backend folder:
+
    ```bash
    cd backend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -51,11 +52,13 @@ cd aircraft-tracking-system
 ### Frontend Setup
 
 1. Navigate to the frontend folder:
+
    ```bash
    cd frontend
    ```
 
 2. Install frontend dependencies:
+
    ```bash
    npm install
    ```
@@ -89,6 +92,7 @@ aircraft-tracking-system/
 - **GET** `/api/test`: A test endpoint for debugging.
 
 ### Example Response from `/api/aircraft`:
+
 ```json
 [
   {
