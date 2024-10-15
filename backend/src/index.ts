@@ -1,14 +1,10 @@
-import express from 'express';
+import net, { Socket } from 'net';
+import express, { Request, Response } from 'express';
 const cors = require('cors');
-const dotenv = require('dotenv');
-// const Aircraft = require('./models/Aircraft');
-
-dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
-// Define the aircraft data structure
 interface Aircraft {
   flightId: string;
   latitude: number;
@@ -17,58 +13,81 @@ interface Aircraft {
   speed: number;
 }
 
-interface TestCoord {
-  latitude: any;
-  longitude: any;
-}
-
-// Initialize aircraftList with the correct type
 let aircraftList: Aircraft[] = [];
 
 // Enable CORS
-app.use(
-  cors({
-    origin: '*',
-  })
-);
-
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Backend server is running!');
+// Optionally, keep the existing SBS TCP server
+const server = net.createServer((socket: Socket) => {
+  console.log('Client connected');
+
+  socket.on('data', (data: Buffer) => {
+    const dataString = data.toString();
+    console.log('Data received:', dataString);
+
+    const lines = dataString.split('\n');
+    lines.forEach((line: string) => {
+      const parts = line.split(',');
+
+      // Check if the message is a position report (MSG,3) and has lat/lon
+      if (parts[0] === 'MSG' && parts[1] === '3' && parts[14] && parts[15]) {
+        console.log(`Processing data line: ${line}`);
+        const aircraft: Aircraft = {
+          flightId: parts[10].trim() || 'N/A', // flight ID or 'N/A' if empty
+          latitude: parseFloat(parts[14]),    // Latitude from the message
+          longitude: parseFloat(parts[15]),   // Longitude from the message
+          altitude: parseInt(parts[11], 10),  // Barometric altitude
+          speed: parseInt(parts[12], 10) || 0 // Ground speed (default to 0 if missing)
+        };
+
+        console.log('Parsed aircraft data:', aircraft);
+
+        // Add new aircraft or update existing one
+        const existingAircraftIndex = aircraftList.findIndex(a => a.flightId === aircraft.flightId);
+        if (existingAircraftIndex > -1) {
+          aircraftList[existingAircraftIndex] = aircraft;
+          console.log(`Updated aircraft: ${aircraft.flightId}`);
+        } else {
+          aircraftList.push(aircraft);
+          console.log(`Added new aircraft: ${aircraft.flightId}`);
+        }
+      }
+    });
+  });
+
+  socket.on('end', () => {
+    console.log('Client disconnected');
+  });
+
+  socket.on('error', (err) => {
+    console.error('Socket error:', err.message);
+  });
 });
 
-// POST route to receive aircraft data
-app.post('/api/aircraft', async (req, res) => {
-  const { flightId, latitude, longitude, altitude, speed } = req.body;
+// server.listen(5000, '0.0.0.0', () => {
+//   console.log('Listening for SBS data on port 30003...');
+// });
 
-  try {
-    // Create a new aircraft object in the database
-    const newAircraft: Aircraft = {
-      flightId,
-      latitude,
-      longitude,
-      altitude,
-      speed,
-    };
-    //   await newAircraft.save(); // Save to MongoDB
+// Existing GET route
+app.get('/api/aircraft', (req: Request, res: Response) => {
+  console.log('Sending aircraft data:', aircraftList);
+  res.status(200).json(aircraftList);
+});
 
-    res.status(201).json({ message: 'Aircraft data received', newAircraft });
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving aircraft data', error });
+// New POST route
+app.post('/api/aircraft', (req: Request, res: Response) => {
+  const newData = req.body;
+  if (Array.isArray(newData)) {
+    aircraftList = newData;
+    console.log('Aircraft data updated via POST');
+    res.status(200).json({ message: 'Aircraft data updated successfully' });
+  } else {
+    res.status(400).json({ error: 'Invalid data format' });
   }
 });
 
-// GET route to send aircraft data to the frontend
-app.get('/api/aircraft', (req, res) => {
-  res.status(200).json(aircraftList); // Send the aircraft list to the frontend
-});
-
-app.get('/api/test', (req, res) => {
-  const coordinate: TestCoord = { latitude: 44.8756, longitude: -91.4383 };
-  res.status(200).json(coordinate);
-});
-
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
