@@ -113,7 +113,7 @@
   transition: all 0.3s ease;
 }
 
-#info:hover, #info:focus, #contact:hover, #contact:focus {
+#info:hover, #contact:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
   background-color: #d94f44;
