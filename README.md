@@ -6,10 +6,6 @@ This is a web-based **Aircraft Tracking System** built with **React**, **Leaflet
 
 This project tracks aircraft within a 30-mile radius using **ADS-B (Automatic Dependent Surveillance-Broadcast)** technology and displays this information on an interactive map. The system includes a **frontend (React/Leaflet)** for visualization, a **backend (Node.js/Express)** to handle API requests, and a Raspberry Pi with an ADS-B antenna that collects flight data. The data is refreshed every 10 seconds, ensuring real-time tracking.
 
-## UI Design
-
-![UI Design](frontend/public/img/UI-design.png)
-
 ## Equipment Used
 
 1. Raspberry Pi:
