@@ -8,6 +8,7 @@ body {
   overflow: hidden;
   background-color: black;
   font-family: 'Playfair Display', serif;
+  overflow-x: hidden;
 }
 
 code {

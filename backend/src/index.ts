@@ -3,6 +3,8 @@ import http from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -78,6 +80,15 @@ const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number
   return compassBearing;
 };
 
+// Connect to MongoDB
+const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://peltobrendan:@uwecSwimmer2024@plane-tracking.erjau.mongodb.net/?retryWrites=true&w=majority&appName=Plane-Tracking';
+// mongoose.connect(mongoURI)
+// .then(() => console.log('Connected to MongoDB'))
+// .catch(err => {
+//   console.error('Failed to connect to MongoDB:', err);
+//   process.exit(1);
+// });
+
 // Cleanup function to remove stale aircraft
 const CLEANUP_INTERVAL = 15000; // 15 seconds
 const MAX_IDLE_TIME = 15000;    // 15 seconds
@@ -115,8 +126,28 @@ app.get('/api/aircraft', (req: Request, res: Response) => {
   res.status(200).json(aircraftList);
 });
 
+// API Key Authentication Middleware
+const authenticatePi = (req: Request, res: Response, next: Function) => {
+  const apiKey = req.headers['x-api-key'];
+  const validApiKey = process.env.PI_API_KEY; // Ensure this is set in your .env
+  console.log(req.headers['x-api-key']);
+
+  if (apiKey === validApiKey) {
+    next(); // Proceed to the next middleware or route handler
+  } else {
+    res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+  }
+};
+
+// Define rate limiter for the POST /api/aircraft route
+const piRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 100,             // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+
 // POST route to update aircraft data
-app.post('/api/aircraft', (req: Request, res: Response) => {
+app.post('/api/aircraft', piRateLimiter, authenticatePi, (req: Request, res: Response) => {
   const newData = req.body;
   if (Array.isArray(newData)) {
     const currentTime = Date.now();
