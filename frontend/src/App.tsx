@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { io } from 'socket.io-client';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet'; // Import Leaflet for custom marker icons
-import './App.css'
+import L from 'leaflet';
+import './App.css';
 
-// Define the structure of the aircraft data
 interface Aircraft {
-  flightId: string;
+  icao: string;
+  flight: string;
   latitude: number;
   longitude: number;
   altitude: number;
   speed: number;
-  heading?: number;
+  heading: number;
+  lastUpdate: number;
+  prevLatitude?: number;
+  prevLongitude?: number;
 }
 
-// Function to create a rotated plane icon based on heading
+// Function to rotate plane icon based off heading
 const createRotatedIcon = (iconUrl: string, angle: number) => {
   return L.divIcon({
     className: 'custom-div-icon',
@@ -31,10 +34,10 @@ const App: React.FC = () => {
   const [instructionModalVisible, setInstructionModalVisible] = useState(false);
 
   useEffect(() => {
-    if (instructionModalVisible || instructionModalVisible) {
-      document.body.style.overflow = 'hidden'; // Disable scrolling
+    if (instructionModalVisible || contactModalVisible) {
+      document.body.style.overflow = 'hidden'; 
     } else {
-      document.body.style.overflow = 'hidden'; // Re-enable scrolling
+      document.body.style.overflow = 'auto'; 
     }
   }, [contactModalVisible, instructionModalVisible]);
 
@@ -44,24 +47,26 @@ const App: React.FC = () => {
   const openInstructionModal = () => setInstructionModalVisible(true);
   const closeInstructionModal = () => setInstructionModalVisible(false);
 
-  
-  // Fetch aircraft data from the backend
+  // Initialize WebSocket connection
   useEffect(() => {
-    const fetchAircraftData = () => {
-      axios
-        .get('http://localhost:5000/api/aircraft')
-        .then((response) => {
-          console.log('Data fetched:', response.data);  // Log the data for debugging
-          setAircraftData(response.data);
-        })
-        .catch((error) => {
-          console.error('Error fetching aircraft data:', error);
-        });
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+    });
+
+    socket.on('aircraftData', (data: Aircraft[]) => {
+      console.log('Received aircraft data via WebSocket:', data);
+      setAircraftData(data);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket server');
+    });
+
+    return () => {
+      socket.disconnect();
     };
-  
-    const intervalId = setInterval(fetchAircraftData, 5000);
-  
-    return () => clearInterval(intervalId);
   }, []);
 
   // Define a default center position for the map
@@ -70,30 +75,30 @@ const App: React.FC = () => {
   return (
     <div>
       <div className='container'>
-      <div className="header">
-        <button id="contact" onClick={openContactModal}>Contact</button>
-        {contactModalVisible && (
-          <div className="modal-stuff" onClick={closeContactModal}>
-            <div className="modal-content-contact" onClick={(e) => e.stopPropagation()}>
-              <div className='contact-header'>
-                <span className="close-contact" onClick={closeContactModal}>&times;</span>
-                <h2 className="name">Brendan Pelto</h2>
+        <div className="header">
+          <button id="contact" onClick={openContactModal}>Contact</button>
+          {contactModalVisible && (
+            <div className="modal-stuff" onClick={closeContactModal}>
+              <div className="modal-content-contact" onClick={(e) => e.stopPropagation()}>
+                <div className='contact-header'>
+                  <span className="close-contact" onClick={closeContactModal}>&times;</span>
+                  <h2 className="name">Brendan Pelto</h2>
+                </div>
+                <p>Phone: (651) 829 - 5695</p>
+                <p><a href="https://www.linkedin.com/in/brendan-pelto-52a885221/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
+                <p><a href="https://github.com/Brprb08" target="_blank" rel="noopener noreferrer">GitHub</a></p>
               </div>
-              <p>Phone: (651) 829 - 5695</p>
-              <p><a href="https://www.linkedin.com/in/brendan-pelto-52a885221/" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
-              <p><a href="https://github.com/Brprb08" target="_blank" rel="noopener noreferrer">GitHub</a></p>
             </div>
-          </div>
-        )}
+          )}
 
-        <h1 className="title">Aircraft Tracking System</h1>
+          <h1 className="title">Aircraft Tracking System</h1>
 
-        <button id="info" onClick={openInstructionModal}>Information</button>
-        {instructionModalVisible && (
-          <div className="modal-stuff" onClick={closeInstructionModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <span className="close" onClick={closeInstructionModal}>&times;</span>
-              <section id="overview">
+          <button id="info" onClick={openInstructionModal}>Information</button>
+          {instructionModalVisible && (
+            <div className="modal-stuff" onClick={closeInstructionModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <span className="close" onClick={closeInstructionModal}>&times;</span>
+                <section id="overview">
                 <h1>Welcome to My Aircraft Tracking Project</h1>
                 <p>
                   Using an ADS-B antenna, I track planes within a 30-mile radius of my home in real-time.
@@ -146,37 +151,33 @@ const App: React.FC = () => {
                   <li>FlightRadar24 (Inspiration)</li>
                 </ul>
               </section>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <div>
-        <MapContainer center={defaultCenter} zoom={5} className='map'>
-          <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {aircraftData.map((aircraft) => (
-            <Marker
-              key={aircraft.flightId}
-              position={[aircraft.latitude, aircraft.longitude]}
-              icon={L.divIcon({
-                className: 'custom-div-icon',
-                html: `<img src="/img/light-aircraft.png" style="transform: rotate(${aircraft.heading || -135}deg); width: 25px; height: 25px;" />`,
-                iconSize: [25, 25],
-              })}
-            >
-              <Popup>
-                Flight: {aircraft.flightId} <br /> Altitude: {aircraft.altitude} ft <br /> Speed: {aircraft.speed} knots
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
-      <div className="footer">
-        <p>Aircraft Tracking System &copy; 2024 | Powered by ADS-B Technology | Built with Raspberry Pi</p>
-      </div>
+        <div className='map-section'>
+          <MapContainer center={defaultCenter} zoom={5} className='map'>
+            <TileLayer
+              attribution="&copy; OpenStreetMap contributors"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {aircraftData.map((aircraft) => (
+              <Marker
+                key={aircraft.icao} // Ensure 'icao' is unique
+                position={[aircraft.latitude, aircraft.longitude]}
+                icon={createRotatedIcon('/img/aircraft.png', aircraft.heading)}
+              >
+                <Popup>
+                  Flight: {aircraft.flight} <br /> Altitude: {aircraft.altitude} ft <br /> Speed: {aircraft.speed} knots
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+        <div className="footer">
+          <p>Aircraft Tracking System &copy; 2024 | Powered by ADS-B Technology | Built with Raspberry Pi</p>
+        </div>
       </div>
     </div>
   );

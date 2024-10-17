@@ -1,93 +1,192 @@
-import net, { Socket } from 'net';
 import express, { Request, Response } from 'express';
-const cors = require('cors');
+import http from 'http';
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+dotenv.config();
 
 const app = express();
-const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
+// Define ports using environment variables or defaults
+const HTTP_PORT: number = process.env.HTTP_PORT ? parseInt(process.env.HTTP_PORT, 10) : 5000;
+
+// Aircraft interface with all necessary properties
 interface Aircraft {
-  flightId: string;
+  icao: string;           // Unique identifier, mapped from 'hex'
+  flight: string;      // Flight identifier, mapped from 'flight'
   latitude: number;
   longitude: number;
   altitude: number;
   speed: number;
+  heading: number;
+  lastUpdate: number;    // Timestamp of the last update
+  prevLatitude?: number; // Previous latitude for heading calculation
+  prevLongitude?: number;// Previous longitude for heading calculation
 }
 
+// In-memory list to store aircraft data
 let aircraftList: Aircraft[] = [];
 
-// Enable CORS
-app.use(cors({ origin: '*' }));
+// Middleware setup
+// const allowedOrigins = ['https://www.yourdomain.com']; // Replace with your actual frontend URL
+
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     // Allow requests with no origin (like mobile apps or curl requests)
+//     if (!origin) return callback(null, true);
+//     if (allowedOrigins.indexOf(origin) === -1) {
+//       const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+//       return callback(new Error(msg), false);
+//     }
+//     return callback(null, true);
+//   },
+//   methods: ['GET', 'POST'],
+//   credentials: true,
+// }));
+app.use(cors({
+  origin: '*', // Allows all origins
+  methods: ['GET', 'POST'],
+  credentials: true,
+}));
+
 app.use(express.json());
 
-// Optionally, keep the existing SBS TCP server
-const server = net.createServer((socket: Socket) => {
-  console.log('Client connected');
+// Create HTTP server and integrate with Socket.io
+const httpServer = http.createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: '*', // Allow only your frontend's origin
+  },
+});
 
-  socket.on('data', (data: Buffer) => {
-    const dataString = data.toString();
-    console.log('Data received:', dataString);
+// Function to calculate bearing between two geographical points
+const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRadians = (deg: number) => (deg * Math.PI) / 180;
+  const lat1Rad = toRadians(lat1);
+  const lat2Rad = toRadians(lat2);
+  const diffLong = toRadians(lon2 - lon1);
 
-    const lines = dataString.split('\n');
-    lines.forEach((line: string) => {
-      const parts = line.split(',');
+  const x = Math.sin(diffLong) * Math.cos(lat2Rad);
+  const y = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+            Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(diffLong);
 
-      // Check if the message is a position report (MSG,3) and has lat/lon
-      if (parts[0] === 'MSG' && parts[1] === '3' && parts[14] && parts[15]) {
-        console.log(`Processing data line: ${line}`);
-        const aircraft: Aircraft = {
-          flightId: parts[10].trim() || 'N/A', // flight ID or 'N/A' if empty
-          latitude: parseFloat(parts[14]),    // Latitude from the message
-          longitude: parseFloat(parts[15]),   // Longitude from the message
-          altitude: parseInt(parts[11], 10),  // Barometric altitude
-          speed: parseInt(parts[12], 10) || 0 // Ground speed (default to 0 if missing)
-        };
+  let initialBearing = Math.atan2(x, y);
+  initialBearing = (initialBearing * 180) / Math.PI;
+  const compassBearing = (initialBearing + 360) % 360;
 
-        console.log('Parsed aircraft data:', aircraft);
+  return compassBearing;
+};
 
-        // Add new aircraft or update existing one
-        const existingAircraftIndex = aircraftList.findIndex(a => a.flightId === aircraft.flightId);
-        if (existingAircraftIndex > -1) {
-          aircraftList[existingAircraftIndex] = aircraft;
-          console.log(`Updated aircraft: ${aircraft.flightId}`);
-        } else {
-          aircraftList.push(aircraft);
-          console.log(`Added new aircraft: ${aircraft.flightId}`);
-        }
-      }
-    });
+// Cleanup function to remove stale aircraft
+const CLEANUP_INTERVAL = 15000; // 15 seconds
+const MAX_IDLE_TIME = 15000;    // 15 seconds
+
+setInterval(() => {
+  const currentTime = Date.now();
+  const initialLength = aircraftList.length;
+  aircraftList = aircraftList.filter(aircraft => {
+    const isActive = currentTime - aircraft.lastUpdate < MAX_IDLE_TIME;
+    if (!isActive) {
+      console.log(`Removing inactive aircraft: ${aircraft.flight} (${aircraft.icao})`);
+    }
+    return isActive;
   });
+  if (aircraftList.length !== initialLength) {
+    io.emit('aircraftData', aircraftList);
+  }
+}, CLEANUP_INTERVAL);
 
-  socket.on('end', () => {
-    console.log('Client disconnected');
-  });
+// Handle WebSocket connections
+io.on('connection', (socket: Socket) => {
+  console.log('Client connected via WebSocket');
 
-  socket.on('error', (err) => {
-    console.error('Socket error:', err.message);
+  // Send current aircraft data upon connection
+  socket.emit('aircraftData', aircraftList);
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected from WebSocket');
   });
 });
 
-// server.listen(5000, '0.0.0.0', () => {
-//   console.log('Listening for SBS data on port 30003...');
-// });
-
-// Existing GET route
+// Optional GET route to fetch aircraft data via HTTP
 app.get('/api/aircraft', (req: Request, res: Response) => {
   console.log('Sending aircraft data:', aircraftList);
   res.status(200).json(aircraftList);
 });
 
-// New POST route
+// POST route to update aircraft data
 app.post('/api/aircraft', (req: Request, res: Response) => {
   const newData = req.body;
   if (Array.isArray(newData)) {
-    aircraftList = newData;
-    console.log('Aircraft data updated via POST');
+    const currentTime = Date.now();
+    newData.forEach((entry, index) => {
+      // Extract fields with fallback options
+      const icao = entry.hex?.trim() || entry.flight?.trim(); // Fallback to 'flightId' if 'hex' is missing
+      const flight = entry.flight?.trim() || entry.flight?.trim() || 'N/A';
+      const latitude = entry.lat ?? entry.latitude;
+      const longitude = entry.lon ?? entry.longitude;
+      const altitude = entry.altitude;
+      const speed = entry.speed || 0;
+      const heading = entry.track ?? entry.heading ?? 0;
+
+      // Validate essential fields
+      if (!icao) {
+        console.warn(`Skipping aircraft at index ${index} with undefined ICAO: ${JSON.stringify(entry)}`);
+        return; // Skip this entry
+      }
+
+      if (latitude === undefined || longitude === undefined || altitude === undefined) {
+        console.warn(`Skipping aircraft at index ${index} due to missing fields: ${JSON.stringify(entry)}`);
+        return; // Skip this entry
+      }
+
+      const existingIndex = aircraftList.findIndex(a => a.icao === icao);
+      if (existingIndex !== -1) {
+        const existingAircraft = aircraftList[existingIndex];
+        const calculatedHeading = calculateBearing(existingAircraft.latitude, existingAircraft.longitude, latitude, longitude);
+
+        // Update existing aircraft
+        aircraftList[existingIndex] = {
+          ...existingAircraft,
+          flight,
+          latitude,
+          longitude,
+          altitude,
+          speed,
+          heading: calculatedHeading || heading, // Use calculated heading or incoming track
+          lastUpdate: currentTime,
+          prevLatitude: existingAircraft.latitude,
+          prevLongitude: existingAircraft.longitude,
+        };
+        console.log(`Updated aircraft via POST: ${flight} (${icao}) with heading: ${aircraftList[existingIndex].heading}`);
+      } else {
+        // Add new aircraft
+        const newAircraft: Aircraft = {
+          icao,
+          flight,
+          latitude,
+          longitude,
+          altitude,
+          speed,
+          heading,
+          lastUpdate: currentTime,
+        };
+        aircraftList.push(newAircraft);
+        console.log(`Added new aircraft via POST: ${flight} (${icao})`);
+      }
+    });
+
+    // Emit updated aircraft list after processing all entries
+    io.emit('aircraftData', aircraftList);
+
     res.status(200).json({ message: 'Aircraft data updated successfully' });
   } else {
-    res.status(400).json({ error: 'Invalid data format' });
+    res.status(400).json({ error: 'Invalid data format. Expected an array of aircraft objects.' });
   }
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server is running on http://localhost:${port}`);
+// Start the HTTP and WebSocket server on port 5000
+httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`HTTP and WebSocket server is running on http://localhost:${HTTP_PORT}`);
 });

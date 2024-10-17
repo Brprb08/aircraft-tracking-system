@@ -64,6 +64,11 @@
   width: 100%;
 }
 
+.map-section {
+  display: flex;
+  flex-grow: 1;
+}
+
 .map {
   flex-grow: 1;  /* Allow the map to take all available space */
   min-height: 400px;  /* Prevent the map from collapsing */
@@ -138,6 +143,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
   overflow-y: auto;
   position: relative;
+  border: 5px solid #ff6f61;
 }
 
 .modal-content-contact {
@@ -154,6 +160,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  border: 5px solid #ff6f61;
 }
 
 /* Close button */
