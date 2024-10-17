@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './App.css';
@@ -163,15 +164,17 @@ const App: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {aircraftData.map((aircraft) => (
-              <Marker
-                key={aircraft.icao} // Ensure 'icao' is unique
-                position={[aircraft.latitude, aircraft.longitude]}
-                icon={createRotatedIcon('/img/aircraft.png', aircraft.heading)}
-              >
-                <Popup>
-                  Flight: {aircraft.flight} <br /> Altitude: {aircraft.altitude} ft <br /> Speed: {aircraft.speed} knots
-                </Popup>
-              </Marker>
+              aircraft.icao ? (
+                <Marker
+                  key={aircraft.icao} // Ensure 'icao' is unique
+                  position={[aircraft.latitude, aircraft.longitude]}
+                  icon={createRotatedIcon('/img/aircraft.png', aircraft.heading)}
+                >
+                  <Popup>
+                    Flight: {aircraft.flight} <br /> Altitude: {aircraft.altitude} ft <br /> Speed: {aircraft.speed} knots
+                  </Popup>
+                </Marker>
+              ) : null
             ))}
           </MapContainer>
         </div>
