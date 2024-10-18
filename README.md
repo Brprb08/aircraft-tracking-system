@@ -36,7 +36,6 @@ Data is refreshed every 10 seconds, ensuring up-to-date tracking of aircraft mov
   - MongoDB
   - Mongoose
   - Joi (for data validation)
-  - Helmet (for security)
   - Express-Rate-Limit
 
 - **Hardware:**
@@ -61,6 +60,7 @@ Data is refreshed every 10 seconds, ensuring up-to-date tracking of aircraft mov
 
 ### Project Structure
 
+```
 aircraft-tracking-system/
 ├── backend/ # Backend Node.js server
 │ ├── src/
@@ -90,8 +90,7 @@ aircraft-tracking-system/
 │ └── dump1090 # Executable binary for capturing data via ADS-B antenna
 ├── .env # Environment variables (ensure this is excluded from version control)
 └── README.md # This README file
-
-gh the provided contact information in the project's repository.
+```
 
 ---
 
@@ -99,9 +98,23 @@ gh the provided contact information in the project's repository.
 
 - **GET /api/plane:** Retrieves the current list of tracked aircraft.
 
+```
+{
+  "icao": "A123BC",
+  "flight": "UA123",
+  "altitude": 32000,
+  "speed": 500,
+  "timestamp": "2024-04-27T12:34:56Z",
+  "country": "USA",
+  "airline": "Boeing 747"
+  "_id": "6711e8738f6f8ab178c867a0"
+}
+```
+
 - **POST /api/addPlane:** Adds a new aircraft to the tracking system.
   - **Headers:**
     - Content-Type: application/json
+    - x-api-key: your_secure_api_key
   - **Body:**
 
 ```
@@ -140,10 +153,12 @@ gh the provided contact information in the project's repository.
 
 - **DELETE /api/aircraft/:icao:** Deletes an aircraft based on its ICAO code.
 
-  - **Headers:** x-api-key: your_secure_api_key
+  - **Headers:**
+    - x-api-key: your_secure_api_key
 
 - **DELETE /api/aircraft/id/:id:** Deletes an aircraft based on its unique ID in the database.
-  - **Headers:** x-api-key: your_secure_api_key
+  - **Headers:**
+    - x-api-key: your_secure_api_key
 
 ---
 
@@ -157,7 +172,7 @@ gh the provided contact information in the project's repository.
 #### Data Collection:
 
 - dump1090 decodes the ADS-B signals into readable aircraft data.
-- The Python script (plane-collect.py) fetches this data and sends it to the backend server via the /api/aircraft endpoint every 15 seconds.
+- The Python script (plane-collect.py) running on the Raspberry Pi fetches this data and sends it to the backend server via the /api/aircraft endpoint every 15 seconds.
 
 #### Backend Processing:
 
@@ -187,7 +202,7 @@ gh the provided contact information in the project's repository.
 
 ---
 
-### Security Considerations
+### Security Considerations to improve on
 
 #### Environment Variables:
 
@@ -205,15 +220,6 @@ app.use(
     credentials: true,
   })
 );
-```
-
-#### Helmet Middleware:
-
-- Enhances security by setting various HTTP headers.
-
-```javascript
-import helmet from 'helmet';
-app.use(helmet());
 ```
 
 #### HTTPS:
@@ -258,17 +264,6 @@ app.use(helmet());
 
 ---
 
-### Licenses and Credits
-
-- **Raspberry Pi:** Used for real-time data collection and processing.
-- **ADS-B Antenna & SDR Dongle:** Hardware for receiving aircraft signals.
-- **Leaflet & OpenStreetMap:** Utilized for rendering interactive maps.
-- **dump1090:** Software for decoding ADS-B signals.
-- **Socket.IO:** Facilitates real-time communication between the backend and frontend.
-- **Inspiration:** Flight tracking platforms like FlightRadar24.
-
----
-
 ### Getting Started
 
 #### Clone the Repository:
@@ -283,14 +278,141 @@ git clone https://github.com/yourusername/aircraft-tracking-system.git
 cd aircraft-tracking-system
 ```
 
-#### Set Up the Backend:
+#### Raspberry Pi Setup
 
-- Follow the Backend Setup instructions.
+**Hardware:**
 
-#### Set Up the Frontend:
+1. **ADS-B Antenna:**
 
-- Follow the Frontend Setup instructions.
+   - Connect the ADS-B antenna to the SDR dongle.
+   - Plug the SDR dongle into the Raspberry Pi's USB port.
 
-#### Set Up the Raspberry Pi:
+2. **Raspberry Pi:**
+   - Ensure the Raspberry Pi is connected to your local network via Wi-Fi or Ethernet.
+   - Power on the Raspberry Pi.
 
-- Follow the Raspberry Pi Setup instructions.
+**Software:**
+
+1. **Install dump1090:**
+   - Clone the dump1090 repository:
+
+```
+git clone https://github.com/antirez/dump1090.git
+```
+
+- Navigate to the dump1090 directory and build the software:
+
+```
+     cd dump1090
+     make
+     sudo make install
+```
+
+- Verify installation by running:
+
+```
+     dump1090 --interactive
+```
+
+2. **Install Python Dependencies:**
+   - Ensure Python is installed on the Raspberry Pi.
+   - Install required Python packages:
+
+```
+     pip install requests
+```
+
+3. **Configure Environment Variables:**
+   - Create a .env file in the raspberry-pi/ directory with the following variables:
+
+```
+   BACKEND_URL=http://<backend-server-ip>:5000/api/aircraft
+   PI_API_KEY=your_secure_api_key
+```
+
+4. **Run the Python Script:**
+   - Navigate to the raspberry-pi/ directory:
+
+```
+     cd raspberry-pi
+```
+
+- Start the data collection script:
+
+```
+     python plane-collect.py
+```
+
+---
+
+#### Backend Setup
+
+1. **Navigate to the Backend Directory:**
+
+```
+   cd backend
+```
+
+2. **Install Dependencies**:
+
+```
+npm install
+```
+
+3. **Configure Environment Variables**:
+   - Create a .env file in the backend/ directory with the following variables:
+
+```
+   HTTP_PORT=5000
+   NODE_ENV=development
+   PI_API_KEY=your_secure_api_key
+   MONGO_URI=your_mongodb_connection_string
+```
+
+4. **Start the Backend Server**:
+
+```
+npm start
+```
+
+The backend server will run on http://localhost:5000 by default.
+
+#### Frontend Setup
+
+1. **Navigate to the Frontend Directory**:
+
+```
+cd frontend
+```
+
+2. **Install Dependencies**:
+
+```
+npm install
+```
+
+3. **Configure Environment Variables**:
+   - Create a .env file in the frontend/ directory with the following variables:
+
+```
+REACT_APP_BACKEND_URL=http://localhost:5000/api
+```
+
+4. **Start the Frontend Application**:
+
+```
+npm start
+```
+
+The React app will be accessible at http://localhost:3000.
+
+---
+
+### Licenses and Credits
+
+- **Raspberry Pi:** Used for real-time data collection and processing.
+- **ADS-B Antenna & SDR Dongle:** Hardware for receiving aircraft signals.
+- **Leaflet & OpenStreetMap:** Utilized for rendering interactive maps.
+- **dump1090:** Software for decoding ADS-B signals.
+- **Socket.IO:** Facilitates real-time communication between the backend and frontend.
+- **Inspiration:** Flight tracking platforms like FlightRadar24.
