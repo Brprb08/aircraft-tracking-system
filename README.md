@@ -1,164 +1,296 @@
-# Aircraft Tracking System
+### Aircraft Tracking System
 
-This is a web-based **Aircraft Tracking System** built with **React**, **Leaflet** for mapping, and a **Node.js/Express** backend. The system collects real-time aircraft data via an ADS-B antenna connected to a Raspberry Pi and visualizes it on a map. It integrates data collected from local hardware and simulates aircraft movement on the frontend map.
+A web-based Aircraft Tracking System built with React, Leaflet for mapping, and a Node.js/Express backend. The system collects real-time aircraft data via an ADS-B antenna connected to a Raspberry Pi and visualizes it on an interactive map. It integrates data collected from local hardware and broadcasts updates to the frontend in real-time using WebSockets.
 
-## Project Overview
+---
 
-This project tracks aircraft within a 30-mile radius using **ADS-B (Automatic Dependent Surveillance-Broadcast)** technology and displays this information on an interactive map. The system includes a **frontend (React/Leaflet)** for visualization, a **backend (Node.js/Express)** to handle API requests, and a Raspberry Pi with an ADS-B antenna that collects flight data. The data is refreshed every 10 seconds, ensuring real-time tracking.
+### Project Overview
 
-## Equipment Used
+This project tracks aircraft within a 30-mile radius using ADS-B (Automatic Dependent Surveillance-Broadcast) technology and displays this information on an interactive map. The system comprises:
 
-1. Raspberry Pi:
+- **Frontend:** Built with React and Leaflet, providing real-time visualization of aircraft positions.
+- **Backend:** Developed with Node.js and Express, handling API requests, data processing, and real-time data broadcasting via Socket.IO.
+- **Hardware Integration:** Utilizes a Raspberry Pi with an ADS-B antenna and Software Defined Radio (SDR) dongle to capture and send flight data.
+- **Database:** MongoDB is used for data persistence, ensuring reliable storage and retrieval of aircraft information.
 
-   - A small single-board computer used to run dump1090 to capture ADS-B signals and send flight data to the backend.
-   - Setup includes Python scripts for fetching and processing the aircraft data.
+Data is refreshed every 10 seconds, ensuring up-to-date tracking of aircraft movements.
 
-2. ADS-B Antenna:
+---
 
-   - Used to capture signals broadcast by nearby planes.
-   - Allows for a maximum range of approximately 30 miles from the antenna's location.
+### Technologies Used
 
-3. Software Defined Radio (SDR) Dongle:
+- **Frontend:**
 
-   - A USB dongle that acts as the receiver to collect radio frequencies from ADS-B-equipped aircraft.
-   - Paired with dump1090 to convert the received radio signals into readable data.
+  - React
+  - TypeScript
+  - Leaflet
+  - React-Leaflet
+  - Socket.IO Client
 
-4. Frontend:
+- **Backend:**
 
-   - Built using React and Leaflet, it displays real-time aircraft positions on an interactive map.
-   - Users can click on aircraft to view details like flight ID, altitude, and speed.
+  - Node.js
+  - Express
+  - TypeScript
+  - Socket.IO
+  - MongoDB
+  - Mongoose
+  - Joi (for data validation)
+  - Helmet (for security)
+  - Express-Rate-Limit
 
-5. Backend:
-   - Developed in Node.js with Express, it receives data from the Raspberry Pi, processes it, and serves it to the frontend via a REST API.
+- **Hardware:**
+  - Raspberry Pi
+  - ADS-B Antenna
+  - Software Defined Radio (SDR) Dongle
+  - dump1090
 
-## Features
+---
 
-- **Real-Time Aircraft Tracking**: The map displays real-time aircraft positions based on data captured by the Raspberry Pi.
-- **Simulated Aircraft**: Optionally includes simulated aircraft to demonstrate real-time data visualization and plane movements.
-- **Raspberry Pi Integration**: A Python script running on the Raspberry Pi collects and sends aircraft data to the backend.
-- **Map Interactivity**: Click on planes to view more detailed flight information, including altitude, speed, and flight ID.
+### Features
 
-## Project Structure
+- **Real-Time Aircraft Tracking:** Displays live aircraft positions on an interactive Leaflet map.
+- **WebSockets Integration:** Uses Socket.IO to broadcast real-time aircraft data to connected clients.
+- **Data Persistence:** Stores aircraft information in MongoDB for reliable data management.
+- **API Endpoints:** Provides RESTful APIs for fetching, adding, and deleting aircraft data.
+- **Security Measures:** Implements API key authentication, rate limiting, and data validation to ensure secure operations.
+- **Interactive Map:** Users can click on aircraft markers to view detailed flight information, including flight ID, altitude, speed, and heading.
+- **Modals for Information:** Provides modals for contact information, project details, and error messages to enhance user experience.
 
-```bash
-   aircraft-tracking-system/
-   ├── backend/           # Backend Node.js server
-   │  └── index.ts        # Server setup, API handling, aircraft data processing
-   ├── frontend/          # Frontend React app with Leaflet for map rendering
-   │ ├── src/             # Main React app components and styles
-   │ └── public/          # Public assets for the frontend
-   ├── raspberry-pi/      # Raspberry Pi Python scripts for data collection
-   │ └── plane-collect.py # Python script to fetch aircraft data using dump1090
-   ├── dump1090/          # ADS-B decoding software to capture raw aircraft data
-   │ └── dump1090         # Executable binary for capturing data via ADS-B antenna
-   └── README.md          # This README file
+---
+
+### Project Structure
+
+aircraft-tracking-system/
+├── backend/ # Backend Node.js server
+│ ├── src/
+│ │ ├── controllers/ # Route handlers
+│ │ ├── dao/ # Data Access Objects
+│ │ ├── middlewares/ # Express middlewares
+│ │ ├── routes/ # API routes
+│ │ ├── services/ # Business logic and services
+│ │ ├── utils/ # Utility functions
+│ │ └── index.ts # Server setup and configuration
+│ ├── package.json
+│ └── tsconfig.json
+├── frontend/ # Frontend React app with Leaflet for map rendering
+│ ├── src/
+│ │ ├── components/ # React components
+│ │ ├── hooks/ # Custom React hooks
+│ │ ├── services/ # API service functions
+│ │ ├── utils/ # Utility functions and hooks
+│ │ ├── App.tsx # Main React component
+│ │ └── index.tsx # Entry point
+│ ├── public/ # Public assets for the frontend
+│ ├── package.json
+│ └── tsconfig.json
+├── raspberry-pi/ # Raspberry Pi Python scripts for data collection
+│ └── plane-collect.py # Python script to fetch aircraft data using dump1090
+├── dump1090/ # ADS-B decoding software to capture raw aircraft data
+│ └── dump1090 # Executable binary for capturing data via ADS-B antenna
+├── .env # Environment variables (ensure this is excluded from version control)
+└── README.md # This README file
+
+gh the provided contact information in the project's repository.
+
+---
+
+### Backend API Endpoints
+
+- **GET /api/plane:** Retrieves the current list of tracked aircraft.
+
+- **POST /api/addPlane:** Adds a new aircraft to the tracking system.
+  - **Headers:**
+    - Content-Type: application/json
+  - **Body:**
+
+```
+{
+  "icao": "A123BC",
+  "flight": "UA123",
+  "altitude": 32000,
+  "speed": 500,
+  "timestamp": "2024-04-27T12:34:56Z",
+  "country": "USA",
+  "airline": "Boeing 747"
+}
 ```
 
-## Equipment Setup Instructions
+- **POST /api/aircraft:** Adds or updates aircraft data in bulk, typically sent from the Raspberry Pi.
+  - **Headers:**
+    - Content-Type: application/json
+    - x-api-key: your_secure_api_key
+  - **Body:**
 
-### Raspberry Pi Setup
-
-1. Hardware:
-
-   - Attach the ADS-B antenna to the SDR dongle and plug it into the Raspberry Pi.
-   - Ensure the Raspberry Pi is connected to your local network (Wi-Fi or Ethernet).
-
-2. Software:
-
-   - Install dump1090: This software decodes ADS-B signals.
-   - Install via the github (https://github.com/antirez/dump1090) and follow README for setup
-   - Run the Python script: The script continuously collects aircraft data and sends it to the backend.
-   - python plane-collect.py
-
-3. Start Data Collection
-   - After setup, the Python script (plane-collect.py) will start fetching aircraft data and sending it to your backend server.
-
-### Backend Setup
-
-1. Navigate to the backend/ folder:
-
-   ```bash
-   cd backend
-   ```
-
-2. Install the required dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the backend server:
-   ```bash
-   npm start
-   ```
-
-#### Backend API Endpoints
-
-- GET /api/aircraft: Returns the current aircraft data stored in the backend.
-- POST /api/aircraft: Receives updated aircraft data from the Raspberry Pi.
-
-### Frontend Setup
-
-1. Navigate to the frontend/ folder:
-
-   ```bash
-   cd frontend
-   ```
-
-2. Install the frontend dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the frontend:
-   ```bash
-   npm start
-   ```
-
-The React app will be accessible at http://localhost:3000.
-
-### Python Code on Raspberry Pi
-
-The Python script located in the raspberry-pi/ folder handles:
-
-- **Starting dump1090**: It collects raw ADS-B data.
-- **Fetching aircraft data**: Queries the dump1090 local server (http://192.168.1.94:8080/data.json) to get aircraft information.
-- **Sending data to backend**: Sends aircraft data to the backend API every 15 seconds.
-
-To run the script:
-
-```bash
-python plane-collect.py
+```
+[
+  {
+    "icao": "A123BC",
+    "flight": "UA123",
+    "latitude": 44.8756,
+    "longitude": -91.4383,
+    "altitude": 32000,
+    "speed": 500,
+    "heading": 90,
+    "lastUpdate": 1616161616161
+  },
+  ...
+]
 ```
 
-## How the Application Works
+- **DELETE /api/aircraft/:icao:** Deletes an aircraft based on its ICAO code.
 
-### ADS-B Technology:
+  - **Headers:** x-api-key: your_secure_api_key
 
-- ADS-B is a surveillance technology that allows aircraft to broadcast their position, altitude, and speed via radio signals.
-- The Raspberry Pi, combined with an SDR dongle and ADS-B antenna, receives these signals and passes the data to the backend.
+- **DELETE /api/aircraft/id/:id:** Deletes an aircraft based on its unique ID in the database.
+  - **Headers:** x-api-key: your_secure_api_key
 
-### Frontend Visualization:
+---
 
-- The frontend React app fetches the aircraft data from the backend every 5 seconds and displays it on a Leaflet map.
-- Users can interact with the map by clicking on planes to view detailed flight information.
+### How the Application Works
 
-### Backend Processing:
+#### ADS-B Technology:
 
-- The backend receives data from the Raspberry Pi, processes it, and stores it in an in-memory array (aircraftList).
-- The frontend fetches this data from the backend via API calls.
+- Aircraft equipped with ADS-B transmit their position, altitude, speed, and heading via radio signals.
+- The ADS-B antenna connected to the SDR dongle on the Raspberry Pi captures these signals.
 
-## Future Enhancements
+#### Data Collection:
 
-- Extended Range: Improve range by upgrading the antenna or SDR dongle.
-- Historical Data: Store flight data in a database to visualize flight paths over time.
-- Flight Information: Integrate external APIs (like FlightAware) to fetch flight origin/destination details.
-- Mobile Optimization: Improve the user experience on mobile devices.
+- dump1090 decodes the ADS-B signals into readable aircraft data.
+- The Python script (plane-collect.py) fetches this data and sends it to the backend server via the /api/aircraft endpoint every 15 seconds.
 
-## Licenses and Credits
+#### Backend Processing:
 
-- Raspberry Pi: Used for real-time data collection.
-- ADS-B Antenna and SDR Dongle: Hardware for receiving aircraft signals.
-- Leaflet & OpenStreetMap: Used for rendering real-time maps.
-- Inspiration: Flight tracking platforms like FlightRadar24.
+- The backend server receives aircraft data, validates it using Joi schemas, and updates the MongoDB database.
+- In-memory storage (aircraftList) is maintained for quick access and real-time broadcasting.
+- Socket.IO is used to emit updated aircraft data to all connected frontend clients in real-time.
+
+#### Frontend Visualization:
+
+- The React application connects to the backend server via WebSockets to receive real-time aircraft data.
+- Leaflet renders the aircraft positions on an interactive map.
+- Users can click on aircraft markers to view detailed information such as flight ID, altitude, speed, and heading.
+
+### Security Measures
+
+#### API Key Authentication:
+
+- Protected endpoints require a valid API key (`x-api-key`) to prevent unauthorized access.
+
+#### Rate Limiting:
+
+- Limits the number of requests per IP to mitigate potential abuse or DDoS attacks.
+
+#### Data Validation:
+
+- Ensures that incoming data adheres to defined schemas to prevent malformed or malicious data from being processed.
+
+---
+
+### Security Considerations
+
+#### Environment Variables:
+
+- Ensure that the `.env` files are excluded from version control (e.g., added to `.gitignore`) to protect sensitive information like API keys and database credentials.
+
+#### CORS Configuration:
+
+- The backend is configured to accept requests only from `http://localhost:3000`. Update this in production to include your frontend's actual domain.
+
+```javascript
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // Replace with your frontend's domain in production
+    methods: ['GET', 'POST', 'DELETE'],
+    credentials: true,
+  })
+);
+```
+
+#### Helmet Middleware:
+
+- Enhances security by setting various HTTP headers.
+
+```javascript
+import helmet from 'helmet';
+app.use(helmet());
+```
+
+#### HTTPS:
+
+- Implement HTTPS in production to secure data in transit between clients and the server.
+
+#### Input Sanitization:
+
+- Beyond Joi validation, ensure that all inputs are sanitized to prevent injection attacks.
+
+---
+
+### Future Enhancements
+
+#### Extended Range:
+
+- Improve tracking range by upgrading the antenna or using a more powerful SDR dongle.
+
+#### Historical Data Visualization:
+
+- Store flight data in the database to visualize historical flight paths and trends over time.
+
+#### Flight Information Integration:
+
+- Integrate with external APIs (e.g., FlightAware) to fetch additional flight details like origin and destination.
+
+#### User Authentication & Authorization:
+
+- Implement user accounts with roles to manage permissions and access to certain features.
+
+#### Mobile Optimization:
+
+- Enhance the frontend for better performance and usability on mobile devices.
+
+#### Performance Optimizations:
+
+- Implement caching strategies and optimize data broadcasting to handle larger volumes of data efficiently.
+
+#### Deployment:
+
+- Host the application on cloud platforms (e.g., AWS, Heroku, Vercel) and set up continuous integration and deployment pipelines.
+
+---
+
+### Licenses and Credits
+
+- **Raspberry Pi:** Used for real-time data collection and processing.
+- **ADS-B Antenna & SDR Dongle:** Hardware for receiving aircraft signals.
+- **Leaflet & OpenStreetMap:** Utilized for rendering interactive maps.
+- **dump1090:** Software for decoding ADS-B signals.
+- **Socket.IO:** Facilitates real-time communication between the backend and frontend.
+- **Inspiration:** Flight tracking platforms like FlightRadar24.
+
+---
+
+### Getting Started
+
+#### Clone the Repository:
+
+```bash
+git clone https://github.com/yourusername/aircraft-tracking-system.git
+```
+
+#### Navigate to the Project Directory:
+
+```bash
+cd aircraft-tracking-system
+```
+
+#### Set Up the Backend:
+
+- Follow the Backend Setup instructions.
+
+#### Set Up the Frontend:
+
+- Follow the Frontend Setup instructions.
+
+#### Set Up the Raspberry Pi:
+
+- Follow the Raspberry Pi Setup instructions.

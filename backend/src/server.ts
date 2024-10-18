@@ -14,9 +14,9 @@ const app = express();
 const HTTP_PORT = process.env.HTTP_PORT ? parseInt(process.env.HTTP_PORT, 10) : 5000;
 
 app.use(cors({
-  origin: '*',
+  origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'DELETE'],
-  credentials: true,
+  credentials: true
 }));
 
 app.use(express.json());
@@ -25,7 +25,9 @@ app.use(express.json());
 const httpServer = http.createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: '*',
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'DELETE'],
+    credentials: true
   },
 });
 
