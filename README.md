@@ -432,4 +432,3 @@ The React app will be accessible at `http://localhost:3000`.
 ### Acknowledgements
 
 - Special thanks to the open-source community for providing tools and libraries that made this project possible.
-- Gratitude to contributors and testers who provided valuable feedback during development.
