@@ -113,7 +113,20 @@
   transition: all 0.3s ease;
 }
 
-#info:hover, #contact:hover {
+#logout {
+  margin-left: 20px;
+  padding: 12px 20px;
+  font-size: medium;
+  background-color: #ff6f61;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+#info:hover, #contact:hover, #logout:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
   background-color: #d94f44;

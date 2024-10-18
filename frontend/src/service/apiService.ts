@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { useModal } from '../utils/useModal';
 
+const token = localStorage.getItem('token');  // Fetch the token from localStorage
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`  // Add the token to the Authorization header
+  };
+
 export const fetchAircraft = async () => {
   try {
     const response = await axios.get('http://localhost:5000/api/plane');
@@ -47,3 +54,14 @@ export const deleteAircraftByID = async (id: string) => {
     throw error; // Rethrow the error
   }
 };
+
+export const addUser = async (user: {}) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/users', user, {headers});
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error creating user`, error);
+      throw error; // Rethrow the error
+    }
+  };
