@@ -55,13 +55,21 @@ Data is refreshed every 10 seconds, ensuring up-to-date tracking of aircraft mov
 ### Features
 
 - **Real-Time Aircraft Tracking:** Displays live aircraft positions on an interactive Leaflet map with real-time updates.
+
 - **Aircraft Icons Rotation:** Aircraft icons rotate based on heading to reflect their actual orientation.
+
 - **WebSockets Integration:** Uses Socket.IO to broadcast real-time aircraft data to connected clients, ensuring instantaneous updates without page refreshes.
+
 - **Data Persistence:** Stores aircraft and user information in MongoDB for reliable data management and retrieval. Implements in-memory storage for quick access to active aircraft data.
+
 - **User Authentication:** Implements secure user registration and login using JWT tokens. Passwords are hashed using bcrypt for enhanced security. Protected routes ensure that only authenticated users can access certain features.
+
 - **API Endpoints:** Provides RESTful APIs for fetching, adding, and deleting aircraft data. Includes endpoints for user management (registration and login).
+
 - **Security Measures:** Implements API key authentication for the Raspberry Pi data source. Applies rate limiting to prevent abuse and potential DDoS attacks. Uses Joi for data validation to ensure data integrity.
+
 - **Interactive Map:** Users can click on aircraft markers to view detailed flight information, including flight ID, altitude, speed, heading, and more. Map automatically updates as aircraft move or new aircraft enter the tracking area.
+
 - **Modals and User Interface:** Provides modals for contact information, project details, instructions, and error messages to enhance user experience. Responsive design ensures usability across various devices and screen sizes.
 
 ---
@@ -81,6 +89,8 @@ aircraft-tracking-system/
 │   │   ├── utils/           # Utility functions
 │   │   ├── validation/      # Data validation schemas
 │   │   └── server.ts        # Server setup and configuration
+|   ├── types
+|   |   ├── express.d.ts     # Adds a user token to Express requests
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── .env
@@ -99,7 +109,6 @@ aircraft-tracking-system/
     ├── plane-collect.py     # Python script to fetch aircraft data using dump1090
     ├── dump1090/            # ADS-B decoding software
     │   └── dump1090         # Executable for capturing data via ADS-B antenna
-    └── requirements.txt     # Python dependencies
 ```
 
 ---
@@ -235,36 +244,22 @@ aircraft-tracking-system/
 
 ---
 
-### Security Considerations to Improve On
-
-- **Environment Variables:** Ensure that the `.env` files are excluded from version control (e.g., added to `.gitignore`) to protect sensitive information like API keys, JWT secrets, and database credentials.
-- **CORS Configuration:** The backend is configured to accept requests only from `http://localhost:3000`. Update this in production to include your frontend's actual domain.
-
-```javascript
-app.use(
-  cors({
-    origin: 'http://your-production-domain.com', // Replace with your frontend's domain in production
-    methods: ['GET', 'POST', 'DELETE'],
-    credentials: true,
-  })
-);
-```
-
-- **HTTPS:** Implement HTTPS in production to secure data in transit between clients and the server, using SSL/TLS certificates.
-- **Helmet Middleware:** Use Helmet to set secure HTTP headers, further protecting the application from common web vulnerabilities.
-- **Input Sanitization:** Beyond Joi validation, incorporate libraries like DOMPurify to sanitize inputs and prevent XSS attacks.
-
----
-
 ### Future Enhancements
 
 - **Extended Range and Coverage:** Improve tracking range by upgrading the antenna or using a more powerful SDR dongle. Network multiple Raspberry Pis to cover a larger geographical area.
+
 - **Historical Data Visualization:** Store flight data over time to visualize historical flight paths and analyze trends. Implement features to replay flight paths or view time-lapse animations.
+
 - **Flight Information Integration:** Integrate with external aviation APIs (e.g., FlightAware, OpenSky Network) to fetch additional flight details like origin, destination, aircraft type, and airline logos.
+
 - **Advanced User Features:** Implement user roles (e.g., admin, user) to manage access to certain features or administrative functions. Allow users to customize the map display, such as filtering by altitude, speed, or specific airlines.
+
 - **Mobile Optimization:** Enhance the frontend for better performance and usability on mobile devices, including touch gestures and responsive layouts.
+
 - **Performance Optimizations:** Implement caching strategies using Redis or in-memory caches to reduce database load. Optimize data broadcasting by only sending updates for changed aircraft.
+
 - **Deployment and Scalability:** Host the application on scalable cloud platforms (e.g., AWS, Heroku, Vercel). Set up continuous integration and deployment pipelines using tools like GitHub Actions or Jenkins. Containerize the application using Docker for consistent deployment environments.
+
 - **Monitoring and Analytics:** Incorporate monitoring tools like Prometheus and Grafana to track application performance. Analyze user interaction to improve the user experience continuously.
 
 ---
@@ -307,14 +302,7 @@ sudo apt-get update
 sudo apt-get upgrade
 ```
 
-2. **Install dump1090:**
-   - Install dependencies:
-
-```bash
-sudo apt-get install build-essential git
-```
-
-- Clone the dump1090 repository:
+2. Clone the dump1090 repository:
 
 ```bash
 git clone https://github.com/antirez/dump1090.git
@@ -341,12 +329,6 @@ dump1090 --interactive
 sudo apt-get install python3 python3-pip
 ```
 
-- Install required Python packages:
-
-```bash
-pip3 install -r requirements.txt
-```
-
 4. **Configure Environment Variables:**
    - Create a `.env` file in the `raspberry-pi/` directory with the following variables:
 
@@ -367,8 +349,6 @@ cd raspberry-pi
 ```bash
 python3 plane-collect.py
 ```
-
-- For continuous operation, consider running the script using `screen` or as a `systemd` service.
 
 ---
 
@@ -438,7 +418,7 @@ The React app will be accessible at `http://localhost:3000`.
 
 ---
 
-### Licenses and Credits
+### Credits
 
 - **Raspberry Pi:** Used for real-time data collection and processing.
 - **ADS-B Antenna & SDR Dongle:** Hardware for receiving aircraft signals.
