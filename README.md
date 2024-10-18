@@ -62,34 +62,35 @@ Data is refreshed every 10 seconds, ensuring up-to-date tracking of aircraft mov
 
 ```
 aircraft-tracking-system/
-├── backend/ # Backend Node.js server
+├── backend/           # Backend Node.js server
 │ ├── src/
-│ │ ├── controllers/ # Route handlers
-│ │ ├── dao/ # Data Access Objects
-│ │ ├── middlewares/ # Express middlewares
-│ │ ├── routes/ # API routes
-│ │ ├── services/ # Business logic and services
-│ │ ├── utils/ # Utility functions
-│ │ └── index.ts # Server setup and configuration
+│ │ ├── dao/           # Data Access Objects
+│ │ ├── db/            # Database connection
+| | ├── interfaces/    # Interfaces for object creation
+│ │ ├── middlewares/   # Express middlewares
+│ │ ├── routes/        # API routes
+│ │ ├── services/      # Business logic and services
+│ │ ├── utils/         # Utility functions
+| | ├── validation/    # Validation utils
+│ │ └── server.ts      # Server setup and configuration
+│ ├── package.json
+│ ├── tsconfig.json
+| └── .env
+├── frontend/          # Frontend React app with Leaflet for map rendering
+│ ├── src/
+│ │ ├── service/       # API service functions
+│ │ ├── utils/         # Utility functions and sockets
+│ │ ├── App.tsx        # Main React component
+│ │ └── index.tsx      # Entry point
+│ ├── public/          # Public assets for the frontend including images
 │ ├── package.json
 │ └── tsconfig.json
-├── frontend/ # Frontend React app with Leaflet for map rendering
-│ ├── src/
-│ │ ├── components/ # React components
-│ │ ├── hooks/ # Custom React hooks
-│ │ ├── services/ # API service functions
-│ │ ├── utils/ # Utility functions and hooks
-│ │ ├── App.tsx # Main React component
-│ │ └── index.tsx # Entry point
-│ ├── public/ # Public assets for the frontend
-│ ├── package.json
-│ └── tsconfig.json
-├── raspberry-pi/ # Raspberry Pi Python scripts for data collection
+
+Raspberry Pi
+├── raspberry-pi/      # Raspberry Pi Python scripts for data collection
 │ └── plane-collect.py # Python script to fetch aircraft data using dump1090
-├── dump1090/ # ADS-B decoding software to capture raw aircraft data
-│ └── dump1090 # Executable binary for capturing data via ADS-B antenna
-├── .env # Environment variables (ensure this is excluded from version control)
-└── README.md # This README file
+├── dump1090/          # ADS-B decoding software to capture raw aircraft data
+│ └── dump1090         # Executable binary for capturing data via ADS-B antenna
 ```
 
 ---
