@@ -1,23 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './App.css';
+import { fetchAircraft, submitAircraftData, deleteAircraftByICAO, deleteAircraftByID } from './service/apiService';
+import { useModal } from './utils/useModal';
+import { useSocket } from './utils/useSocket';
 
-interface Aircraft {
-  icao: string;
-  flight: string;
-  latitude: number;
-  longitude: number;
-  altitude: number;
-  speed: number;
-  heading: number;
-  lastUpdate: number;
-  prevLatitude?: number;
-  prevLongitude?: number;
-}
+
+const App: React.FC = () => {
+  const aircraftData = useSocket();
+  const {
+    contactModalVisible,
+    instructionModalVisible,
+    errorModalVisible,
+    errorMessage,
+    openContactModal,
+    closeContactModal,
+    openInstructionModal,
+    closeInstructionModal,
+    closeErrorModal,
+    openErrorModal
+  } = useModal();
+
+  useEffect(() => {
+    if (instructionModalVisible || contactModalVisible) {
+      document.body.style.overflow = 'hidden'; 
+    } else {
+      document.body.style.overflow = 'auto'; 
+    }
+  }, [contactModalVisible, instructionModalVisible]);
+
+
+const exampleAircraftData = {
+  icao: 'A123BC',
+  flight: 'UA123',
+  altitude: '32a000',
+  speed: '5a00',
+  timestamp: Date.now(),
+  country: 'USA',
+  airline: 'Boeing 747'
+};
+
+const exampleAircraftData1 = {
+  icao: 'A123BC',
+  flight: 'UA123',
+  altitude: 32000,
+  speed: 500,
+  timestamp: Date.now(),
+  country: 'USA',
+  airline: 'Boeing 747'
+};
+
+// Possible later on
+// additionalData: {
+//     model: 'Boeing 737', 
+//     country: 'United States',
+//     airline: 'United Airlines',
+//     engineType: 'Jet',  
+//     wingSpan: 35.8       
+//   }
 
 // Function to rotate plane icon based off heading
 const createRotatedIcon = (iconUrl: string, angle: number) => {
@@ -28,47 +70,56 @@ const createRotatedIcon = (iconUrl: string, angle: number) => {
   });
 };
 
-const App: React.FC = () => {
-  const [aircraftData, setAircraftData] = useState<Aircraft[]>([]);
+// Function to handle fetching aircraft data
+const handleFetchAircraft = async () => {
+  try {
+    const data = await fetchAircraft();
+    console.log('Fetched aircraft data:', data);
+  } catch (error) {
+    openErrorModal('Failed to fetch aircraft data');
+  }
+};
 
-  const [contactModalVisible, setContactModalVisible] = useState(false);
-  const [instructionModalVisible, setInstructionModalVisible] = useState(false);
+// Function to handle submitting aircraft data
+const handleSubmitAircraft = async () => {
+  const aircraftData = {
+    icao: 'A123BC',
+    flight: 'UA123',
+    altitude: 32000,
+    speed: 500,
+    timestamp: Date.now(),
+    country: 'USA',
+    airline: 'Boeing 747',
+  };
 
-  useEffect(() => {
-    if (instructionModalVisible || contactModalVisible) {
-      document.body.style.overflow = 'hidden'; 
-    } else {
-      document.body.style.overflow = 'auto'; 
-    }
-  }, [contactModalVisible, instructionModalVisible]);
+  try {
+    const data = await submitAircraftData(aircraftData);
+    console.log('Submitted aircraft data:', data);
+  } catch (error) {
+    openErrorModal('Failed to submit aircraft data');
+  }
+};
 
-  const openContactModal = () => setContactModalVisible(true);
-  const closeContactModal = () => setContactModalVisible(false);
+// Function to delete aircraft by ICAO
+const handleDeleteAircraftByICAO = async () => {
+  try {
+    const data = await deleteAircraftByICAO('A123BC');
+    console.log('Deleted aircraft:', data);
+  } catch (error) {
+    openErrorModal('Failed to delete aircraft by ICAO');
+  }
+};
 
-  const openInstructionModal = () => setInstructionModalVisible(true);
-  const closeInstructionModal = () => setInstructionModalVisible(false);
+// Function to delete aircraft by ID
+const handleDeleteAircraftByID = async () => {
+  try {
+    const data = await deleteAircraftByID('6711dd36650e676c418db07f');
+    console.log('Deleted aircraft:', data);
+  } catch (error) {
+    openErrorModal('Failed to delete aircraft by ID');
+  }
+};
 
-  // Initialize WebSocket connection
-  useEffect(() => {
-    const socket = io('http://localhost:5000');
-
-    socket.on('connect', () => {
-      console.log('Connected to WebSocket server');
-    });
-
-    socket.on('aircraftData', (data: Aircraft[]) => {
-      console.log('Received aircraft data via WebSocket:', data);
-      setAircraftData(data);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Disconnected from WebSocket server');
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
 
   // Define a default center position for the map
   const defaultCenter: [number, number] = [44.8756, -91.4383]; // Example coordinates
@@ -99,6 +150,10 @@ const App: React.FC = () => {
             <div className="modal-stuff" onClick={closeInstructionModal}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <span className="close" onClick={closeInstructionModal}>&times;</span>
+                <button id="getRequest" onClick={(e: any) => handleFetchAircraft()}>Get</button>
+                <button id="postRequest" onClick={(e: any) => handleSubmitAircraft()}>Post</button>
+                <button id="deleteICAORequest" onClick={(e: any) => handleDeleteAircraftByICAO()}>DeleteICAO</button>
+                <button id="deleteIDRequest" onClick={(e: any) => handleDeleteAircraftByID()}>DeleteID</button>
                 <section id="overview">
                 <h1>Welcome to My Aircraft Tracking Project</h1>
                 <p>
@@ -178,6 +233,16 @@ const App: React.FC = () => {
             ))}
           </MapContainer>
         </div>
+        {errorModalVisible && (
+          <div className="modal-stuff" onClick={closeErrorModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <span className="close" onClick={closeErrorModal}>&times;</span>
+              <h2>Error</h2>
+              <p>{errorMessage}</p> {/* Display the error message here */}
+            </div>
+          </div>
+        )}
+
         <div className="footer">
           <p>Aircraft Tracking System &copy; 2024 | Powered by ADS-B Technology | Built with Raspberry Pi</p>
         </div>
