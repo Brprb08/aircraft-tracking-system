@@ -100,16 +100,19 @@ Raspberry Pi
 - **GET /api/plane:** Retrieves the current list of tracked aircraft.
 
 ```
-{
-  "icao": "A123BC",
-  "flight": "UA123",
-  "altitude": 32000,
-  "speed": 500,
-  "timestamp": "2024-04-27T12:34:56Z",
-  "country": "USA",
-  "airline": "Boeing 747"
-  "_id": "6711e8738f6f8ab178c867a0"
-}
+[
+  {
+    "icao": "A123BC",
+    "flight": "UA123",
+    "altitude": 32000,
+    "speed": 500,
+    "timestamp": "2024-04-27T12:34:56Z",
+    "country": "USA",
+    "airline": "Boeing 747"
+    "_id": "6711e8738f6f8ab178c867a0"
+  }
+  ...
+]
 ```
 
 - **POST /api/addPlane:** Adds a new aircraft to the tracking system.
