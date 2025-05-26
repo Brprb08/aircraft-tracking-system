@@ -66,7 +66,7 @@ Aircraft data is updated every 10 seconds to maintain near real-time accuracy.
 
 ## Project Structure
 
-// 
+```
 aircraft-tracking-system/
 ├── backend/
 │   ├── src/
@@ -98,7 +98,7 @@ aircraft-tracking-system/
     ├── plane-collect.py
     └── dump1090/
         └── dump1090
-//
+```
 
 ---
 
